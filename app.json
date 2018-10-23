@@ -1,0 +1,28 @@
+{
+  "assets": {
+    "root": "./assets",
+    "resources": [
+      {
+        "type": "shader",
+        "name": "chunk",
+        "files": [
+          "shaders/chunk.frag.glsl",
+          "shaders/chunk.vert.glsl",
+          "shaders/chunk.geom.glsl"
+        ]
+      }
+    ]
+  },
+  "application": {
+    "window": {
+      "width": 1280,
+      "height": 800,
+      "title": "hello world!",
+      "resizable": true
+    },
+    "open_gl": {
+      "major": 3,
+      "minor": 3
+    }
+  }
+}
