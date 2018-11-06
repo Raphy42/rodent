@@ -1,18 +1,4 @@
 {
-  "assets": {
-    "root": "./assets",
-    "resources": [
-      {
-        "type": "shader",
-        "name": "chunk",
-        "files": [
-          "shaders/chunk.frag.glsl",
-          "shaders/chunk.vert.glsl",
-          "shaders/chunk.geom.glsl"
-        ]
-      }
-    ]
-  },
   "application": {
     "window": {
       "width": 1280,
@@ -24,5 +10,34 @@
       "major": 3,
       "minor": 3
     }
+  },
+  "assets": {
+    "root": "./assets",
+    "ignore_missing_builders": true,
+    "resources": [
+      {
+        "type": "shader",
+        "name": "basic",
+        "files": [
+          "shaders/basic.frag.glsl",
+          "shaders/basic.vert.glsl"
+        ]
+      },
+      {
+        "type": "model",
+        "name": "test",
+        "files": []
+      },
+      {
+        "type": "script",
+        "name": "hello",
+        "files": ["scripts/hello.lua"]
+      },
+      {
+        "type": "kernel",
+        "name": "test",
+        "files": ["kernels/test.cl"]
+      }
+    ]
   }
 }

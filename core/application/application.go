@@ -1,122 +1,115 @@
 package application
 
 import (
-	"log"
 	"runtime"
 	"time"
 
-	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
-	"github.com/raphy42/rodent/core/event"
-	"github.com/raphy42/rodent/core/system"
-	"github.com/raphy42/rodent/core/thread"
+	"github.com/pkg/errors"
+	"github.com/raphy42/rodent/core/graphic/gl"
+	"github.com/raphy42/rodent/core/logger"
+	"github.com/raphy42/rodent/core/message"
+	"go.uber.org/zap"
 )
 
-var (
-	Instance = NewApplication()
-)
-
-type Config struct {
-	Window struct {
-		Width     int    `json:"width"`
-		Height    int    `json:"height"`
-		Title     string `json:"title"`
-		Resizable bool   `json:"resizable"`
-	} `json:"window"`
-	OpenGL struct {
-		Major int `json:"major"`
-		Minor int `json:"minor"`
-	} `json:"open_gl"`
-}
+var log = logger.New()
 
 type Application struct {
-	system.Module
-	config Config
-	window *glfw.Window
+	window  *glfw.Window
+	options windowOptions
 }
 
-func NewApplication() *Application {
-	app := Application{
-		Module: system.NewModule("application", system.HighestPriority-1),
+func New(options ...Option) *Application {
+	config := defaultOptions
+	for _, option := range options {
+		option(&config)
 	}
-
-	return &app
+	return &Application{options: config.Window}
 }
 
-func (a *Application) PreInit(v interface{}) error {
-	config := v.(Config)
-	a.config = config
-
-	return nil
+func coerceFlag(v bool) int {
+	if v {
+		return 1
+	}
+	return 0
 }
 
 func (a *Application) Init() error {
-	config := a.config
+	if err := glfw.Init(); err != nil {
+		return err
+	}
 
-	return thread.DoErr(func() error {
-		if err := glfw.Init(); err != nil {
-			return err
-		}
+	log.Info("glfw initialised")
 
-		glfw.WindowHint(glfw.ContextVersionMajor, config.OpenGL.Major)
-		glfw.WindowHint(glfw.ContextVersionMinor, config.OpenGL.Minor)
-		glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
+	config := a.options
 
-		// glfw3 windows are resizable by default
-		if !config.Window.Resizable {
-			glfw.WindowHint(glfw.Resizable, glfw.False)
-		}
+	glfw.WindowHint(glfw.ContextVersionMajor, config.GLMajor)
+	glfw.WindowHint(glfw.ContextVersionMinor, config.GLMinor)
+	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
+	glfw.WindowHint(glfw.Resizable, coerceFlag(config.Resizable))
 
-		if runtime.GOOS == "darwin" {
-			glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-		}
+	if runtime.GOOS == "darwin" {
+		glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+	}
 
-		conf := a.config.Window
-		window, err := glfw.CreateWindow(conf.Width, conf.Height, conf.Title, nil, nil)
-		if err != nil {
-			return err
-		}
-		a.window = window
-		a.window.MakeContextCurrent()
+	window, err := glfw.CreateWindow(config.Width, config.Height, "default", nil, nil)
+	if err != nil {
+		return err
+	}
 
-		if err := gl.Init(); err != nil {
-			return err
-		}
+	log.Debug("window created",
+		zap.Int("width", config.Width),
+		zap.Int("height", config.Height),
+	)
 
-		log.Printf("renderer: %s\nversion: %s\n", gl.GoStr(gl.GetString(gl.RENDERER)), gl.GoStr(gl.GetString(gl.VERSION)))
+	a.window = window
+	a.window.MakeContextCurrent()
 
-		return nil
-	})
-}
+	glfw.SwapInterval(-1)
 
-func (a *Application) PostInit() error {
-	event.Instance.RegisterMultiple(actionMap)
+	if err := gl.Init(); err != nil {
+		return errors.Wrapf(err, "opengl bootstrap version:%d.%d", config.GLMinor, config.GLMajor)
+	}
+	log.Info("OpenGL initialised",
+		zap.String("renderer", gl.Renderer()),
+		zap.String("version", gl.Version()),
+	)
 
-	thread.Do(func() {
-		a.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-			go event.Instance.Call(func(state *event.State) {
-				state.Input.Key = key
-				state.Input.Action = action
-				state.Input.Mods = mods
-				state.Input.Scancode = scancode
-			})
-		})
-	})
 	return nil
 }
 
-func (a *Application) Ticker() func(time.Time) {
-	ShouldClose, _ := event.Instance.Hash("application.shutdown")
+func (a *Application) Dispose() {
+	glfw.Terminate()
+}
 
-	return func(delta time.Time) {
-		if a.window.ShouldClose() {
-			event.Instance.CallHash(ShouldClose)
-		}
+func (a *Application) Tick(delta time.Time) {
+	glfw.PollEvents()
+	a.window.SwapBuffers()
+}
 
-		// is it really the best place ?
-		thread.Do(func() {
-			a.window.SwapBuffers()
-			glfw.PollEvents()
-		})
-	}
+func (a *Application) ShouldShutdown() bool {
+	return a.window.ShouldClose()
+}
+
+func (a *Application) RegisterEvents(bus message.Bus) {
+	keyboardEvents := bus.Channel("keyboard")
+	a.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+		go func() {
+			keyboardEvents <- &KeyboardEvent{
+				Key: key, Scancode: scancode,
+				Action: action, Mods: mods,
+			}
+		}()
+	})
+
+	framebufferEvents := bus.Channel("framebuffer")
+	a.window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
+		go func() {
+			framebufferEvents <- &FramebufferEvent{Width:width, Height:height}
+		}()
+	})
+
+	a.window.SetCursorPosCallback(func(w *glfw.Window, xpos float64, ypos float64) {
+
+	})
 }
