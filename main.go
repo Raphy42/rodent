@@ -12,6 +12,7 @@ import (
 	app "github.com/raphy42/rodent/core/application"
 	"github.com/raphy42/rodent/core/graphic/gl"
 	"github.com/raphy42/rodent/core/graphic/renderer"
+	"github.com/raphy42/rodent/core/logic"
 	"github.com/raphy42/rodent/core/math"
 	"github.com/raphy42/rodent/core/message"
 )
@@ -74,10 +75,10 @@ func test1() {
 
 	k.RegisterEvents(bus)
 
-	go func(){
+	go func() {
 		keys := bus.Channel("keyboard")
 		for {
-			ev := (<- keys).(*app.KeyboardEvent)
+			ev := (<-keys).(*app.KeyboardEvent)
 			switch ev.Key {
 			case glfw.KeyEscape:
 				os.Exit(0)
@@ -104,15 +105,17 @@ func test1() {
 		Primitive(gl.Points, 1000).
 		Build()
 
-	projection := mgl32.Perspective(mgl32.DegToRad(60), 1200/800, 0.1, 10000.0)
-	camera := mgl32.LookAtV(mgl32.Vec3{15, 15, 15}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
-	mvp := projection.Mul4(camera)
+	camera := logic.NewCamera()
+	camera.Register(bus)
+	camera.Eye = mgl32.Vec3{15, 15, 15}
 
 	renderer.Background(mgl32.Vec4{.5, .5, .5, 1})
 
 	for !k.ShouldShutdown() {
 
 		renderer.Clear()
+		projection := camera.Projection()
+		mvp := projection.Mul4(camera.View())
 		shader.SetMat4("mvp", mvp)
 		payload.Bind()
 		payload.DrawArrays()

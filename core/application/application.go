@@ -92,7 +92,7 @@ func (a *Application) ShouldShutdown() bool {
 }
 
 func (a *Application) RegisterEvents(bus message.Bus) {
-	keyboardEvents := bus.Channel("keyboard")
+	keyboardEvents := bus.Channel(message.Keyboard.String())
 	a.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 		go func() {
 			keyboardEvents <- &KeyboardEvent{
@@ -102,14 +102,17 @@ func (a *Application) RegisterEvents(bus message.Bus) {
 		}()
 	})
 
-	framebufferEvents := bus.Channel("framebuffer")
+	framebufferEvents := bus.Channel(message.Framebuffer.String())
 	a.window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
 		go func() {
-			framebufferEvents <- &FramebufferEvent{Width:width, Height:height}
+			framebufferEvents <- &FramebufferEvent{Width: width, Height: height}
 		}()
 	})
 
+	cursorEvents := bus.Channel(message.Cursor.String())
 	a.window.SetCursorPosCallback(func(w *glfw.Window, xpos float64, ypos float64) {
-
+		go func() {
+			cursorEvents <- &CursorEvent{X: float32(xpos), Y: float32(ypos)}
+		}()
 	})
 }

@@ -10,7 +10,7 @@ type EventBus struct {
 
 func NewEventBus() *EventBus {
 	return &EventBus{
-		channels: make(map[string]chan Message),
+		channels: make(map[string]chan Message, 16),
 	}
 }
 

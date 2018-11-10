@@ -1,5 +1,5 @@
 package message
 
 type Message interface {
-	Typename() string
+	Type() Type
 }
