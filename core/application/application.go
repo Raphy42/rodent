@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/pkg/errors"
+	"github.com/raphy42/rodent/core/application/input"
 	"github.com/raphy42/rodent/core/graphic/gl"
 	"github.com/raphy42/rodent/core/logger"
 	"github.com/raphy42/rodent/core/message"
@@ -92,24 +93,24 @@ func (a *Application) ShouldShutdown() bool {
 }
 
 func (a *Application) RegisterEvents(bus message.Bus) {
-	keyboardEvents := bus.Channel(message.Keyboard.String())
+	keyboardEvents := bus.Publish(message.Keyboard.String())
 	a.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 		go func() {
-			keyboardEvents <- &KeyboardEvent{
-				Key: key, Scancode: scancode,
-				Action: action, Mods: mods,
+			keyboardEvents <- &input.KeyboardAction{
+				Key: input.Key(key), Scancode: input.Scancode(scancode),
+				Action: input.Action(action), Mods: input.Mods(mods),
 			}
 		}()
 	})
 
-	framebufferEvents := bus.Channel(message.Framebuffer.String())
+	framebufferEvents := bus.Publish(message.FramebufferResize.String())
 	a.window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
 		go func() {
 			framebufferEvents <- &FramebufferEvent{Width: width, Height: height}
 		}()
 	})
 
-	cursorEvents := bus.Channel(message.Cursor.String())
+	cursorEvents := bus.Publish(message.Cursor.String())
 	a.window.SetCursorPosCallback(func(w *glfw.Window, xpos float64, ypos float64) {
 		go func() {
 			cursorEvents <- &CursorEvent{X: float32(xpos), Y: float32(ypos)}

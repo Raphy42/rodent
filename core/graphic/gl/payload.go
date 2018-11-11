@@ -1,19 +1,22 @@
 package gl
 
-import "github.com/go-gl/gl/v4.1-core/gl"
+import (
+	"github.com/go-gl/gl/v4.1-core/gl"
+)
 
 type Payload struct {
-	handle uint32
-	mode   uint32
-	first  int32
-	count  int32
+	handle    uint32
+	mode      uint32
+	first     int32
+	count     int32
+	wireframe bool
 }
 
 type Primitive uint32
 
 const (
 	Triangles = gl.TRIANGLES
-	Points = gl.POINTS
+	Points    = gl.POINTS
 )
 
 type PayloadBuilder struct {
@@ -60,5 +63,14 @@ func (p *Payload) Bind() {
 }
 
 func (p *Payload) DrawArrays() {
+	if p.wireframe {
+		gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
+	} else {
+		gl.PolygonMode(gl.FRONT_AND_BACK, gl.FILL)
+	}
 	gl.DrawArrays(p.mode, p.first, p.count)
+}
+
+func (p *Payload) Wireframe(value bool) {
+	p.wireframe = value
 }

@@ -11,7 +11,7 @@ uniform mat4 mvp;
 
 out vec3 color;
 
-const float size = .3;
+const float size = .5;
 const vec3 lightDirection = normalize(vec3(0.4, -1, 0.8));
 
 void createVertex(vec3 offset, vec3 normal) {

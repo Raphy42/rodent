@@ -10,6 +10,8 @@ func Init() error {
 		return errors.Wrap(err, "OpenGL initialisation")
 	}
 	gl.Enable(gl.DEPTH_TEST)
+	gl.Enable(gl.CULL_FACE)
+	// gl.CullFace(gl.FRONT)
 	// gl.DepthFunc(gl.MO)
 	return nil
 }

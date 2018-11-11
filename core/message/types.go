@@ -7,7 +7,7 @@ type Type uint32
 
 const (
 	Keyboard Type = iota
-	Framebuffer
+	FramebufferResize
 	Cursor
 	Camera
 )

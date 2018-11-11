@@ -4,9 +4,9 @@ package message
 
 import "strconv"
 
-const _Type_name = "KeyboardFramebufferCursorCamera"
+const _Type_name = "KeyboardFramebufferResizeCursorCamera"
 
-var _Type_index = [...]uint8{0, 8, 19, 25, 31}
+var _Type_index = [...]uint8{0, 8, 25, 31, 37}
 
 func (i Type) String() string {
 	if i >= Type(len(_Type_index)-1) {

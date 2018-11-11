@@ -6,7 +6,7 @@ import (
 )
 
 func New() *zap.Logger {
-	logger, err := zap.NewProduction(zap.AddCaller())
+	logger, err := zap.NewDevelopment(zap.AddCaller())
 	if err != nil {
 		panic(errors.Wrap(err, "logger creation"))
 	}

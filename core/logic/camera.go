@@ -3,6 +3,7 @@ package logic
 import (
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/raphy42/rodent/core/application"
+	"github.com/raphy42/rodent/core/application/input"
 	"github.com/raphy42/rodent/core/camera"
 	"github.com/raphy42/rodent/core/message"
 )
@@ -19,32 +20,31 @@ func NewCamera() *Camera {
 }
 
 func (c *Camera) Register(bus *message.EventBus) {
-	c.keys = bus.Channel(message.Keyboard.String())
-	c.cursor = bus.Channel(message.Cursor.String())
+	c.keys = bus.Subscribe(message.Keyboard.String())
+	c.cursor = bus.Subscribe(message.Cursor.String())
 
 	updateMouse := false
 
 	go func() {
 		for {
 			ev := <-c.keys
-			key := ev.(*application.KeyboardEvent)
+			key := ev.(*input.KeyboardAction)
 			delta := float32(glfw.GetTime())
-			switch key.Action {
-			case glfw.Press, glfw.Repeat:
-				switch key.Key {
-				case glfw.KeyUp, glfw.KeyW:
-					c.Move(camera.Forward, delta)
-				case glfw.KeyDown, glfw.KeyS:
-					c.Move(camera.Backward, delta)
-				case glfw.KeyLeft, glfw.KeyA:
-					c.Move(camera.Left, delta)
-				case glfw.KeyRight, glfw.KeyD:
-					c.Move(camera.Right, delta)
-				case glfw.KeySpace:
-					updateMouse = !updateMouse
-				}
+			if key.IsReleased() {
+				continue
 			}
-
+			switch key.Key {
+			case input.KeyUp, input.KeyW:
+				c.Move(camera.Forward, delta)
+			case input.KeyDown, input.KeyS:
+				c.Move(camera.Backward, delta)
+			case input.KeyLeft, input.KeyA:
+				c.Move(camera.Left, delta)
+			case input.KeyRight, input.KeyD:
+				c.Move(camera.Right, delta)
+			case input.KeySpace:
+				updateMouse = !updateMouse
+			}
 		}
 	}()
 

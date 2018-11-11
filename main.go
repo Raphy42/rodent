@@ -7,11 +7,12 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	app "github.com/raphy42/rodent/core/application"
+	"github.com/raphy42/rodent/core/application/input"
 	"github.com/raphy42/rodent/core/graphic/gl"
 	"github.com/raphy42/rodent/core/graphic/renderer"
+	"github.com/raphy42/rodent/core/grid"
 	"github.com/raphy42/rodent/core/logic"
 	"github.com/raphy42/rodent/core/math"
 	"github.com/raphy42/rodent/core/message"
@@ -76,11 +77,11 @@ func test1() {
 	k.RegisterEvents(bus)
 
 	go func() {
-		keys := bus.Channel("keyboard")
+		keys := bus.Subscribe(message.Keyboard.String())
 		for {
-			ev := (<-keys).(*app.KeyboardEvent)
+			ev := (<-keys).(*input.KeyboardAction)
 			switch ev.Key {
-			case glfw.KeyEscape:
+			case input.KeyEscape:
 				os.Exit(0)
 			}
 		}
@@ -94,8 +95,24 @@ func test1() {
 	if err := shader.Build(); err != nil {
 		panic(err)
 	}
-	vertices := gl.NewVec3FBuffer(generateCube(10, 10, 10))
-	colors := gl.NewVec3FBuffer(generateColors(1000 * 3))
+
+	testCube := grid.New(10, 10, 10)
+	palette := make([]mgl32.Vec3, 1000)
+	idx := 0
+	testCube.Map(func(x, y, z int, in grid.Node) grid.Node {
+		defer func() {
+			idx += 1
+		}()
+		if idx%10 == 0 {
+			return in
+		}
+		r, g, b := math.HSVtoRGB(float32(x)/10, float32(y)/10, float32(z)/10)
+		palette[idx] = mgl32.Vec3{r, g, b}
+		return grid.Node(idx + 1)
+	})
+
+	vertices := gl.NewVec3FBuffer(testCube.Vertices())
+	colors := gl.NewVec3FBuffer(testCube.Colors(palette))
 
 	// test := gl.NewVec3FBuffer(generateGarbage(36 * 6)).
 	// 	SetAttributes(gl.Vec3, gl.Vec3)
@@ -105,17 +122,31 @@ func test1() {
 		Primitive(gl.Points, 1000).
 		Build()
 
+	keys := bus.Subscribe(message.Keyboard.String())
+	go func() {
+		wireframe := false
+		for {
+			ev := <-keys
+			key := ev.(*input.KeyboardAction)
+			if key.IsPressed() && key.Is(input.KeyLeftBracket) {
+				payload.Wireframe(wireframe)
+				wireframe = !wireframe
+			}
+		}
+	}()
+
 	camera := logic.NewCamera()
 	camera.Register(bus)
 	camera.Eye = mgl32.Vec3{15, 15, 15}
 
 	renderer.Background(mgl32.Vec4{.5, .5, .5, 1})
+	model := mgl32.Scale3D(.5, .5, .5)
 
 	for !k.ShouldShutdown() {
 
 		renderer.Clear()
 		projection := camera.Projection()
-		mvp := projection.Mul4(camera.View())
+		mvp := model.Mul4(projection.Mul4(camera.View()))
 		shader.SetMat4("mvp", mvp)
 		payload.Bind()
 		payload.DrawArrays()
