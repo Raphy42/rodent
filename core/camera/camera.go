@@ -11,7 +11,7 @@ type Camera struct {
 	Up                     mgl32.Vec3
 	Near, Far, FOV, Aspect float32
 
-	speed, yaw, pitch, sensitivity, zoom float32
+	Speed, yaw, pitch, sensitivity, zoom float32
 	dirty                                bool
 	front, right, worldUp                mgl32.Vec3
 	view                                 mgl32.Mat4
@@ -25,8 +25,8 @@ func NewPerspective() *Camera {
 		Up:      mgl32.Vec3{0, 1, 0},
 		worldUp: mgl32.Vec3{0, 1, 0},
 		Near:    0.1, Far: 100,
-		FOV: 60, Aspect: 16 / 9,
-		speed: mgl32.DegToRad(1),
+		FOV: 60, Aspect: 4 / 3,
+		Speed: mgl32.DegToRad(1),
 		front: mgl32.Vec3{0, 0, -1},
 		right: mgl32.Vec3{1, 0, 0},
 		yaw:   -90, sensitivity: 0.25, zoom: 68,
@@ -67,7 +67,7 @@ func (c *Camera) Zoom(amount float32) {
 }
 
 func (c *Camera) Move(action Action, delta float32) {
-	vel := c.speed * delta
+	vel := c.Speed * delta
 	switch action {
 	case Forward:
 		c.Eye = c.Eye.Add(c.front.Mul(vel))

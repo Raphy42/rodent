@@ -36,10 +36,8 @@ func (e *EventBus) bootstrap(typename string) {
 		for {
 			ev := <-e.channels[typename]
 			for _, client := range e.clients[typename] {
-				// go func() {
 				// log.Debug("event", zTypename, zap.Int("slot", slot))
 				client <- ev
-				// }()
 			}
 		}
 	}()

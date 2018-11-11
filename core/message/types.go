@@ -6,8 +6,10 @@ package message
 type Type uint32
 
 const (
-	Keyboard Type = iota
+	Application Type = iota
+	Keyboard
 	FramebufferResize
 	Cursor
+	Scroll
 	Camera
 )

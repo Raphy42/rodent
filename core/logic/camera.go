@@ -2,6 +2,7 @@ package logic
 
 import (
 	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/raphy42/rodent/core/application"
 	"github.com/raphy42/rodent/core/application/input"
 	"github.com/raphy42/rodent/core/camera"
@@ -11,8 +12,7 @@ import (
 type Camera struct {
 	*camera.Camera
 
-	keys   chan message.Message
-	cursor chan message.Message
+	keys, cursor, scroll chan message.Message
 }
 
 func NewCamera() *Camera {
@@ -22,9 +22,11 @@ func NewCamera() *Camera {
 func (c *Camera) Register(bus *message.EventBus) {
 	c.keys = bus.Subscribe(message.Keyboard.String())
 	c.cursor = bus.Subscribe(message.Cursor.String())
+	c.scroll = bus.Subscribe(message.Scroll.String())
 
 	updateMouse := false
 
+	// keyboard events
 	go func() {
 		for {
 			ev := <-c.keys
@@ -45,9 +47,13 @@ func (c *Camera) Register(bus *message.EventBus) {
 			case input.KeySpace:
 				updateMouse = !updateMouse
 			}
+			if key.Mods == input.Shift {
+				c.Speed = mgl32.DegToRad(float32(int(c.Speed) ^ 3))
+			}
 		}
 	}()
 
+	// cursor position
 	go func() {
 		lastX := float32(0)
 		lastY := float32(0)
@@ -59,6 +65,15 @@ func (c *Camera) Register(bus *message.EventBus) {
 			}
 			lastX = cursor.X
 			lastY = cursor.Y
+		}
+	}()
+
+	// mouse wheel
+	go func() {
+		for {
+			ev := <-c.scroll
+			scroll := ev.(*application.ScrollEvent)
+			c.Zoom(scroll.Y)
 		}
 	}()
 }

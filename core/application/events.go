@@ -1,15 +1,8 @@
 package application
 
 import (
-	"github.com/raphy42/rodent/core/application/input"
 	"github.com/raphy42/rodent/core/message"
 )
-
-type KeyboardEvent input.KeyboardAction
-
-func (k KeyboardEvent) Type() message.Type {
-	return message.Keyboard
-}
 
 type FramebufferEvent struct {
 	Width  int
@@ -26,4 +19,12 @@ type CursorEvent struct {
 
 func (c CursorEvent) Type() message.Type {
 	return message.Cursor
+}
+
+type ScrollEvent struct {
+	X, Y float32
+}
+
+func (s ScrollEvent) Type() message.Type {
+	return message.Scroll
 }

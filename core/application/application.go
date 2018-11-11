@@ -18,6 +18,7 @@ var log = logger.New()
 type Application struct {
 	window  *glfw.Window
 	options windowOptions
+	title   chan string
 }
 
 func New(options ...Option) *Application {
@@ -25,7 +26,10 @@ func New(options ...Option) *Application {
 	for _, option := range options {
 		option(&config)
 	}
-	return &Application{options: config.Window}
+	return &Application{
+		options: config.Window,
+		title:   make(chan string, 1),
+	}
 }
 
 func coerceFlag(v bool) int {
@@ -114,6 +118,13 @@ func (a *Application) RegisterEvents(bus message.Bus) {
 	a.window.SetCursorPosCallback(func(w *glfw.Window, xpos float64, ypos float64) {
 		go func() {
 			cursorEvents <- &CursorEvent{X: float32(xpos), Y: float32(ypos)}
+		}()
+	})
+
+	scrollEvents := bus.Publish(message.Scroll.String())
+	a.window.SetScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
+		go func() {
+			scrollEvents <- &ScrollEvent{X: float32(xoff), Y: float32(yoff)}
 		}()
 	})
 }
