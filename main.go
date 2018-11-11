@@ -44,17 +44,6 @@ func main() {
 
 	k.RegisterEvents(bus)
 
-	go func() {
-		keys := bus.Subscribe(message.Keyboard.String())
-		for {
-			ev := (<-keys).(*input.KeyboardAction)
-			switch ev.Key {
-			case input.KeyEscape:
-				os.Exit(0)
-			}
-		}
-	}()
-
 	shader := gl.NewShader(
 		gl.Vertex(readFile("./assets/shaders/basic.vert.glsl")),
 		gl.Geometry(readFile("./assets/shaders/basic.geom.glsl")),
@@ -103,15 +92,21 @@ func main() {
 		Primitive(gl.Points, W*H*D).
 		Build()
 
-	keys := bus.Subscribe(message.Keyboard.String())
+	keys := bus.Subscribe(message.Keyboard)
 	go func() {
 		wireframe := false
 		for {
 			ev := <-keys
 			key := ev.(*input.KeyboardAction)
-			if key.IsPressed() && key.Is(input.KeyLeftBracket) {
-				wireframe = !wireframe
-				payload.Wireframe(wireframe)
+
+			switch {
+			case key.IsPressed() && key.Is(input.KeyLeftBracket):
+				{
+					wireframe = !wireframe
+					payload.Wireframe(wireframe)
+				}
+			case key.Is(input.KeyEscape):
+				os.Exit(0)
 			}
 		}
 	}()

@@ -97,7 +97,7 @@ func (a *Application) ShouldShutdown() bool {
 }
 
 func (a *Application) RegisterEvents(bus message.Bus) {
-	keyboardEvents := bus.Publish(message.Keyboard.String())
+	keyboardEvents := bus.Publish(message.Keyboard)
 	a.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 		go func() {
 			keyboardEvents <- &input.KeyboardAction{
@@ -107,21 +107,21 @@ func (a *Application) RegisterEvents(bus message.Bus) {
 		}()
 	})
 
-	framebufferEvents := bus.Publish(message.FramebufferResize.String())
+	framebufferEvents := bus.Publish(message.FramebufferResize)
 	a.window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
 		go func() {
 			framebufferEvents <- &FramebufferEvent{Width: width, Height: height}
 		}()
 	})
 
-	cursorEvents := bus.Publish(message.Cursor.String())
+	cursorEvents := bus.Publish(message.Cursor)
 	a.window.SetCursorPosCallback(func(w *glfw.Window, xpos float64, ypos float64) {
 		go func() {
 			cursorEvents <- &CursorEvent{X: float32(xpos), Y: float32(ypos)}
 		}()
 	})
 
-	scrollEvents := bus.Publish(message.Scroll.String())
+	scrollEvents := bus.Publish(message.Scroll)
 	a.window.SetScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
 		go func() {
 			scrollEvents <- &ScrollEvent{X: float32(xoff), Y: float32(yoff)}

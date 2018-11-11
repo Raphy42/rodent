@@ -7,35 +7,35 @@ const (
 )
 
 type Bus interface {
-	Publish(string) chan Message
-	Subscribe(string) chan Message
+	Publish(Type) chan Message
+	Subscribe(Type) chan Message
 }
 
 type EventBus struct {
-	channels map[string]chan Message
-	clients  map[string][]chan Message
+	channels map[Type]chan Message
+	clients  map[Type][]chan Message
 }
 
 func NewEventBus() *EventBus {
 	return &EventBus{
-		channels: make(map[string]chan Message),
-		clients:  make(map[string][]chan Message),
+		channels: make(map[Type]chan Message),
+		clients:  make(map[Type][]chan Message),
 	}
 }
 
-func (e *EventBus) bootstrap(typename string) {
+func (e *EventBus) bootstrap(xtype Type) {
 	channel := make(chan Message)
-	e.channels[typename] = channel
-	e.clients[typename] = make([]chan Message, 0)
+	e.channels[xtype] = channel
+	e.clients[xtype] = make([]chan Message, 0)
 
-	zTypename := zap.String("type", typename)
+	zTypename := zap.String("type", xtype.String())
 
 	log.Debug("new subscriber pool", zTypename)
 
 	go func() {
 		for {
-			ev := <-e.channels[typename]
-			for _, client := range e.clients[typename] {
+			ev := <-e.channels[xtype]
+			for _, client := range e.clients[xtype] {
 				// log.Debug("event", zTypename, zap.Int("slot", slot))
 				client <- ev
 			}
@@ -43,27 +43,27 @@ func (e *EventBus) bootstrap(typename string) {
 	}()
 }
 
-func (e *EventBus) Subscribe(typename string) chan Message {
-	_, ok := e.channels[typename]
+func (e *EventBus) Subscribe(xtype Type) chan Message {
+	_, ok := e.channels[xtype]
 
-	log.Info("new subscriber", zap.String("type", typename))
+	log.Info("new subscriber", zap.String("type", xtype.String()))
 
 	if !ok {
-		e.bootstrap(typename)
+		e.bootstrap(xtype)
 	}
 	client := make(chan Message, ChannelSize)
-	e.clients[typename] = append(e.clients[typename], client)
+	e.clients[xtype] = append(e.clients[xtype], client)
 
 	return client
 }
 
-func (e *EventBus) Publish(typename string) chan Message {
-	_, ok := e.channels[typename]
+func (e *EventBus) Publish(xtype Type) chan Message {
+	_, ok := e.channels[xtype]
 
-	log.Info("new publisher", zap.String("type", typename))
+	log.Info("new publisher", zap.String("type", xtype.String()))
 
 	if !ok {
-		e.bootstrap(typename)
+		e.bootstrap(xtype)
 	}
-	return e.channels[typename]
+	return e.channels[xtype]
 }

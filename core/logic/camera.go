@@ -20,9 +20,9 @@ func NewCamera() *Camera {
 }
 
 func (c *Camera) Register(bus *message.EventBus) {
-	c.keys = bus.Subscribe(message.Keyboard.String())
-	c.cursor = bus.Subscribe(message.Cursor.String())
-	c.scroll = bus.Subscribe(message.Scroll.String())
+	c.keys = bus.Subscribe(message.Keyboard)
+	c.cursor = bus.Subscribe(message.Cursor)
+	c.scroll = bus.Subscribe(message.Scroll)
 
 	updateMouse := false
 
