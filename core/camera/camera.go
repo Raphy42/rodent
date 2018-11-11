@@ -1,11 +1,14 @@
 package camera
 
 import (
+	"sync"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/raphy42/rodent/core/math"
 )
 
 type Camera struct {
+	sync.RWMutex
 	Eye                    mgl32.Vec3
 	Target                 mgl32.Vec3
 	Up                     mgl32.Vec3
@@ -35,6 +38,9 @@ func NewPerspective() *Camera {
 }
 
 func (c *Camera) View() mgl32.Mat4 {
+	c.Lock()
+	defer c.Unlock()
+
 	if c.dirty {
 		c.rebuild()
 		c.view = mgl32.LookAtV(c.Eye, c.Eye.Add(c.front), c.Up)
@@ -54,6 +60,9 @@ func (c *Camera) rebuild() {
 }
 
 func (c *Camera) Projection() mgl32.Mat4 {
+	c.Lock()
+	defer c.Unlock()
+
 	if c.dirty {
 		c.projection = mgl32.Perspective(mgl32.DegToRad(c.zoom), c.Aspect, c.Near, c.Far)
 		c.dirty = true
@@ -62,11 +71,17 @@ func (c *Camera) Projection() mgl32.Mat4 {
 }
 
 func (c *Camera) Zoom(amount float32) {
+	c.Lock()
+	defer c.Unlock()
+
 	c.zoom = mgl32.Clamp(c.zoom-amount, 20, 120)
 	c.dirty = true
 }
 
 func (c *Camera) Move(action Action, delta float32) {
+	c.Lock()
+	defer c.Unlock()
+
 	vel := c.Speed * delta
 	switch action {
 	case Forward:
@@ -82,6 +97,9 @@ func (c *Camera) Move(action Action, delta float32) {
 }
 
 func (c *Camera) Center(x, y float32) {
+	c.Lock()
+	defer c.Unlock()
+
 	x *= c.sensitivity
 	y *= c.sensitivity
 

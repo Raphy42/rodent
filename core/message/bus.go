@@ -1,6 +1,10 @@
 package message
 
-import "go.uber.org/zap"
+import (
+	"sync"
+
+	"go.uber.org/zap"
+)
 
 const (
 	ChannelSize = 1
@@ -12,6 +16,7 @@ type Bus interface {
 }
 
 type EventBus struct {
+	sync.RWMutex
 	channels map[Type]chan Message
 	clients  map[Type][]chan Message
 }
@@ -25,6 +30,10 @@ func NewEventBus() *EventBus {
 
 func (e *EventBus) bootstrap(xtype Type) {
 	channel := make(chan Message)
+
+	e.Lock()
+	defer e.Unlock()
+
 	e.channels[xtype] = channel
 	e.clients[xtype] = make([]chan Message, 0)
 
@@ -51,8 +60,11 @@ func (e *EventBus) Subscribe(xtype Type) chan Message {
 	if !ok {
 		e.bootstrap(xtype)
 	}
+
+	e.Lock()
 	client := make(chan Message, ChannelSize)
 	e.clients[xtype] = append(e.clients[xtype], client)
+	e.Unlock()
 
 	return client
 }
