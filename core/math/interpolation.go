@@ -4,16 +4,20 @@ import (
 	"math"
 )
 
+func downcast(fn func(float64) float64, in float32) float32 {
+	return float32(fn(float64(in)))
+}
+
 func Lerp(min, max, value float32) float32 {
 	return (1-value)*min + value*max
 }
 
 func Sin(v float32) float32 {
-	return float32(math.Sin(float64(v)))
+	return downcast(math.Sin, v)
 }
 
 func Cos(v float32) float32 {
-	return float32(math.Cos(float64(v)))
+	return downcast(math.Cos, v)
 }
 
 func HSVtoRGB(h, s, v float32) (float32, float32, float32) {
@@ -39,4 +43,8 @@ func HSVtoRGB(h, s, v float32) (float32, float32, float32) {
 		return v, p, q
 	}
 	return 0, 0, 0
+}
+
+func Sqrt(v float32) float32 {
+	return downcast(math.Sqrt, v)
 }

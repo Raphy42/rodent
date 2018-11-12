@@ -7,7 +7,7 @@ type Node int
 type Grid struct {
 	total                            int
 	width, height, depth             int
-	halfWidth, halfHeight, halfDepth int
+	HalfWidth, HalfHeight, HalfDepth int
 	data                             []Node
 }
 
@@ -16,7 +16,7 @@ func New(w, h, d int) *Grid {
 	return &Grid{
 		total: total,
 		width: w, height: h, depth: d,
-		halfWidth: w / 2, halfHeight: h / 2, halfDepth: d / 2,
+		HalfWidth: w / 2, HalfHeight: h / 2, HalfDepth: d / 2,
 		data: make([]Node, total),
 	}
 }

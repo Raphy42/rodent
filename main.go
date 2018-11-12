@@ -62,11 +62,20 @@ func main() {
 	testCube := grid.New(W, H, D)
 	palette := make([]mgl32.Vec3, W*H*D)
 	idx := 0
+	const radius = 15
 	testCube.Map(func(x, y, z int, in grid.Node) grid.Node {
 		defer func() {
 			idx += 1
 		}()
 
+		x -= testCube.HalfWidth
+		y -= testCube.HalfHeight
+		z -= testCube.HalfDepth
+
+		distance := math.Sqrt(float32(x*x + y*y + z*z))
+		if distance > radius {
+			return in
+		}
 		var r, g, b float32
 		if x%3 == 0 || y%3 == 0 || z%3 == 0 {
 			if x%3 == y%3 && x%3 == z%3 {
