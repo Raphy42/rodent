@@ -68,11 +68,11 @@ func main() {
 			idx += 1
 		}()
 
-		x -= testCube.HalfWidth
-		y -= testCube.HalfHeight
-		z -= testCube.HalfDepth
+		dx := x - testCube.HalfWidth
+		dy := y - testCube.HalfHeight
+		dz := z - testCube.HalfDepth
 
-		distance := math.Sqrt(float32(x*x + y*y + z*z))
+		distance := math.Sqrt(float32(dx*dx + dy*dy + dz*dz))
 		if distance > radius {
 			return in
 		}
